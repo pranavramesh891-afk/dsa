@@ -1,0 +1,131 @@
+import java.awt.*;
+import java.util.LinkedList;
+import java.util.Random;
+import javax.swing.*;
+
+public class LinkedListSlotMachineGUI extends JFrame {
+
+    // --- Backend Config ---
+    private static final String[] SYMBOLS = {"🍒", "🔔", "🍋", "7️⃣", "⭐"};
+    private static final int ROWS = 3;
+    private static final int COLS = 3;
+    private static final int BET_PER_LINE = 10;
+
+    private LinkedList<String>[] grid = new LinkedList[ROWS];
+    private Random random = new Random();
+
+    // --- Frontend Components ---
+    private JLabel[][] labels = new JLabel[ROWS][COLS];
+    private JTextArea messageArea;
+    private JButton spinButton;
+    private JLabel balanceLabel;
+
+    private int balance = 100; // start credits
+
+    // --- Constructor (Setup GUI) ---
+    public LinkedListSlotMachineGUI() {
+        setTitle("🎰 LinkedList Slot Machine");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout(10, 10));
+
+        // --- Create grid panel ---
+        JPanel gridPanel = new JPanel(new GridLayout(ROWS, COLS, 10, 10));
+        gridPanel.setBackground(Color.BLACK);
+        gridPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        Font emojiFont = new Font("Segoe UI Emoji", Font.PLAIN, 48);
+        for (int r = 0; r < ROWS; r++) {
+            for (int c = 0; c < COLS; c++) {
+                labels[r][c] = new JLabel("❔", SwingConstants.CENTER);
+                labels[r][c].setFont(emojiFont);
+                labels[r][c].setOpaque(true);
+                labels[r][c].setBackground(Color.WHITE);
+                gridPanel.add(labels[r][c]);
+            }
+        }
+
+        // --- Message area ---
+        messageArea = new JTextArea(5, 25);
+        messageArea.setEditable(false);
+        messageArea.setFont(new Font("Monospaced", Font.PLAIN, 16));
+
+        // --- Balance label ---
+        balanceLabel = new JLabel("💰 Balance: " + balance);
+        balanceLabel.setFont(new Font("Arial", Font.BOLD, 18));
+
+        // --- Spin button ---
+        spinButton = new JButton("SPIN 🎰");
+        spinButton.setFont(new Font("Arial", Font.BOLD, 20));
+        spinButton.addActionListener(e -> playSlotMachine());
+
+        // --- Bottom panel ---
+        JPanel bottomPanel = new JPanel();
+        bottomPanel.add(spinButton);
+        bottomPanel.add(balanceLabel);
+
+        // --- Add everything to frame ---
+        add(gridPanel, BorderLayout.CENTER);
+        add(new JScrollPane(messageArea), BorderLayout.EAST);
+        add(bottomPanel, BorderLayout.SOUTH);
+
+        setSize(700, 400);
+        setLocationRelativeTo(null);
+        setVisible(true);
+    }
+
+    // --- Backend Logic ---
+    private void spinGrid() {
+        for (int r = 0; r < ROWS; r++) {
+            grid[r] = new LinkedList<>();
+            for (int c = 0; c < COLS; c++) {
+                String symbol = SYMBOLS[random.nextInt(SYMBOLS.length)];
+                grid[r].add(symbol);
+                labels[r][c].setText(symbol);
+            }
+        }
+    }
+
+    private boolean isWinningLine(LinkedList<String> row) {
+        String first = row.get(0);
+        for (String s : row) {
+            if (!s.equals(first)) return false;
+        }
+        return true;
+    }
+
+    private void playSlotMachine() {
+        // Check if player has enough credits
+        int totalBet = ROWS * BET_PER_LINE;
+        if (balance < totalBet) {
+            messageArea.setText("⚠️ Not enough balance to spin!\n");
+            return;
+        }
+
+        balance -= totalBet;
+        spinGrid();
+        int totalWin = 0;
+        StringBuilder sb = new StringBuilder("Results:\n");
+
+        for (int i = 0; i < ROWS; i++) {
+            if (isWinningLine(grid[i])) {
+                totalWin += BET_PER_LINE * 2;
+                sb.append("🏆 Line ").append(i + 1).append(" WIN!\n");
+            }
+        }
+
+        if (totalWin > 0) {
+            sb.append("\n🎉 You won ").append(totalWin).append(" credits!\n");
+            balance += totalWin;
+        } else {
+            sb.append("\n😢 No win this round.\n");
+        }
+
+        balanceLabel.setText("💰 Balance: " + balance);
+        messageArea.setText(sb.toString());
+    }
+
+    // --- Entry Point ---
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(LinkedListSlotMachineGUI::new);
+    }
+}
