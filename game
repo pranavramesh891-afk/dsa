@@ -1,173 +1,91 @@
-<script>
-  // Symbols for slot
-  const symbols = ['🍒', '🔔', '🍋', '7️⃣', '⭐'];
-  const ROWS = 3;
-  const COLS = 3;
-  let betPerLine = 10;
+import java.util.LinkedList;
+import java.util.Random;
+import java.util.Scanner;
 
-  // Define a simple Linked List structure
-  class Node {
-    constructor(value) {
-      this.value = value;
-      this.next = null;
-    }
-  }
+public class LinkedListSlotMachine {
+    
+    // Symbols available in the slot machine
+    private static final String[] SYMBOLS = {"🍒", "🔔", "🍋", "7️⃣", "⭐"};
+    
+    // Slot machine configuration
+    private static final int ROWS = 3;
+    private static final int COLS = 3;
+    private static final int BET_PER_LINE = 10;
 
-  class LinkedList {
-    constructor() {
-      this.head = null;
-    }
+    // LinkedList array (each row is a linked list)
+    private static LinkedList<String>[] grid = new LinkedList[ROWS];
+    private static Random random = new Random();
 
-    append(value) {
-      const newNode = new Node(value);
-      if (!this.head) {
-        this.head = newNode;
-        return;
-      }
-      let current = this.head;
-      while (current.next) {
-        current = current.next;
-      }
-      current.next = newNode;
-    }
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("🎰 Welcome to the LinkedList Slot Machine!");
+        System.out.println("Bet per line: " + BET_PER_LINE);
+        System.out.println("Press ENTER to spin...");
 
-    // Get value at a specific position (like array[row][col])
-    get(index) {
-      let current = this.head;
-      let count = 0;
-      while (current) {
-        if (count === index) return current.value;
-        current = current.next;
-        count++;
-      }
-      return null;
+        while (true) {
+            scanner.nextLine();  // wait for user to press Enter
+            playSlotMachine();
+            System.out.print("Play again? (y/n): ");
+            String again = scanner.nextLine();
+            if (!again.equalsIgnoreCase("y")) break;
+        }
+
+        System.out.println("Thanks for playing! 👋");
+        scanner.close();
     }
 
-    // Convert linked list into a normal array for easy display
-    toArray() {
-      let arr = [];
-      let current = this.head;
-      while (current) {
-        arr.push(current.value);
-        current = current.next;
-      }
-      return arr;
-    }
-  }
-
-  // Each row of the slot grid will now be a linked list
-  const winningLines = [
-    [ [0,0], [0,1], [0,2] ],
-    [ [1,0], [1,1], [1,2] ],
-    [ [2,0], [2,1], [2,2] ]
-  ];
-
-  // Generate random linked list grid
-  function spinGrid() {
-    const grid = [];
-    for (let row = 0; row < ROWS; row++) {
-      const list = new LinkedList();
-      for (let col = 0; col < COLS; col++) {
-        list.append(symbols[Math.floor(Math.random() * symbols.length)]);
-      }
-      grid.push(list); // store linked list for this row
-    }
-    return grid;
-  }
-
-  // Check if a line is winning using linked list values
-  function isWinningLine(grid, line) {
-    const firstSymbol = grid[line[0][0]].get(line[0][1]);
-    return line.every(([r, c]) => grid[r].get(c) === firstSymbol);
-  }
-
-  // Render linked list grid visually
-  function renderGrid(grid, winLines = []) {
-    const slotGrid = document.getElementById('slotGrid');
-    slotGrid.innerHTML = '';
-
-    for (let r = 0; r < ROWS; r++) {
-      const rowDiv = document.createElement('div');
-      rowDiv.className = 'row';
-      const rowArray = grid[r].toArray();
-
-      for (let c = 0; c < COLS; c++) {
-        const cellDiv = document.createElement('div');
-        cellDiv.className = 'cell';
-        cellDiv.textContent = rowArray[c];
-
-        // Highlight if part of winning line
-        winLines.forEach(line => {
-          line.forEach(([lr, lc]) => {
-            if (lr === r && lc === c) {
-              cellDiv.classList.add('win');
+    // Create a random grid using LinkedLists
+    private static void spinGrid() {
+        for (int r = 0; r < ROWS; r++) {
+            grid[r] = new LinkedList<>(); // create a new linked list for each row
+            for (int c = 0; c < COLS; c++) {
+                // add a random symbol to the row
+                grid[r].add(SYMBOLS[random.nextInt(SYMBOLS.length)]);
             }
-          });
-        });
-
-        rowDiv.appendChild(cellDiv);
-      }
-      slotGrid.appendChild(rowDiv);
+        }
     }
-  }
 
-  // Main slot machine play function
-  function playSlotMachine() {
-    const grid = spinGrid();
-    let totalWin = 0;
-    let winLines = [];
-
-    winningLines.forEach(line => {
-      if (isWinningLine(grid, line)) {
-        totalWin += betPerLine * 2;
-        winLines.push(line);
-      }
-    });
-
-    renderGrid(grid, winLines);
-
-    const resultDiv = document.getElementById('result');
-    if (totalWin === 0) {
-      resultDiv.textContent = 'No win this round.';
-    } else {
-      let winText = winLines.map((_, i) => `Line ${i + 1}`).join(', ');
-      resultDiv.textContent = `WIN on ${winText}! (+${totalWin})`;
+    // Display the grid on console
+    private static void renderGrid() {
+        System.out.println("------------------");
+        for (LinkedList<String> row : grid) {
+            for (String symbol : row) {
+                System.out.print(symbol + "  ");
+            }
+            System.out.println();
+        }
+        System.out.println("------------------");
     }
-  }
 
-  // Initial slot grid load
-  renderGrid(spinGrid());
+    // Check if all symbols in a row are the same (a win)
+    private static boolean isWinningLine(LinkedList<String> row) {
+        String first = row.get(0);
+        for (String symbol : row) {
+            if (!symbol.equals(first)) {
+                return false; // not all same
+            }
+        }
+        return true; // all symbols match
+    }
 
-  // Start Menu
-  function toggleStartMenu() {
-    const menu = document.getElementById('startMenu');
-    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
-  }
+    // Main game logic
+    private static void playSlotMachine() {
+        spinGrid();        // generate new random grid
+        renderGrid();      // display it to the user
 
-  window.onclick = function(event) {
-    const menu = document.getElementById('startMenu');
-    if (event.target.closest('.start-btn')) return;
-    if (event.target.closest('.start-menu')) return;
-    menu.style.display = 'none';
-  };
+        int totalWin = 0;
+        for (int i = 0; i < ROWS; i++) {
+            if (isWinningLine(grid[i])) {
+                totalWin += BET_PER_LINE * 2;
+                System.out.println("🏆 Line " + (i + 1) + " is a WIN!");
+            }
+        }
 
-  function showSlotMachine() {
-    toggleStartMenu();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    alert('Slot Machine is ready to play!');
-  }
+        if (totalWin > 0) {
+            System.out.println("🎉 You won " + totalWin + " credits!");
+        } else {
+            System.out.println("😢 No win this round. Try again!");
+        }
+    }
+}
 
-  // Bet selection
-  function selectBet(amount) {
-    betPerLine = amount;
-    document.getElementById('currentBet').textContent = `Current Bet per line: ${betPerLine}`;
-    const options = document.querySelectorAll('.bet-option');
-    options.forEach(opt => {
-      if (parseInt(opt.textContent) === amount) {
-        opt.classList.add('selected');
-      } else {
-        opt.classList.remove('selected');
-      }
-    });
-  }
-</script>
